@@ -1,0 +1,39 @@
+/* غيّر هذه الألوان الثلاثة لتناسب مشروعك */
+* { box-sizing: border-box; }
+body {
+  font-family: "Cairo", sans-serif;
+  margin: 0;
+  background: #F7F6F2;
+  color: #1B1F3B;
+  line-height: 1.8;
+}
+header, section, footer { padding: 16px; }
+header { background: #1B1F3B; color: white; }
+nav { display: flex; flex-wrap: wrap; gap: 16px; }
+nav a { color: white; text-decoration: none; }
+.hero { text-align: center; padding: 40px 16px; }
+.cta {
+  display: inline-block;
+  background: #E8742E; color: white;
+  padding: 12px 28px; border-radius: 999px;
+  text-decoration: none;
+}
+.cards { display: flex; flex-direction: column; gap: 16px; }
+.card {
+  background: white; border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.card img { width: 100%; border-radius: 8px; }
+label { display: block; margin-top: 8px; }
+input { width: 100%; padding: 10px; }
+button {
+  margin-top: 12px; background: #E8742E; color: white;
+  border: none; padding: 12px 24px; border-radius: 8px;
+}
+footer { text-align: center; color: #5E6378; }
+
+@media (min-width: 768px) {
+  .cards { flex-direction: row; }
+  .card { flex: 1; }
+}

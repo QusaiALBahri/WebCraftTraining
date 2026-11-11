@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebCraft</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>[اسم مشروعك]</h1>
+    <nav>
+      <a href="#services">خدماتنا</a>
+      <a href="#about">من نحن</a>
+      <a href="#contact">تواصل</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <h2>[جملة ترحيبية تشرح فكرتك]</h2>
+      <p>[وصف قصير: ماذا تقدّم ولمن]</p>
+      <a class="cta" href="#contact">[احجز الآن]</a>
+    </section>
+    <section id="services">
+      <h2>خدماتنا</h2>
+      <div class="cards">
+        <article class="card">
+          <img src="images/1.jpg" alt="[وصف الصورة]">
+          <h3>[الخدمة الأولى]</h3>
+          <p>[وصف قصير]</p>
+        </article>
+        <article class="card">
+          <img src="images/2.jpg" alt="[وصف الصورة]">
+          <h3>[الخدمة الثانية]</h3>
+          <p>[وصف قصير]</p>
+        </article>
+        <article class="card">
+          <img src="images/3.jpg" alt="[وصف الصورة]">
+          <h3>[الخدمة الثالثة]</h3>
+          <p>[وصف قصير]</p>
+        </article>
+      </div>
+    </section>
+    <section id="about">
+      <h2>من نحن</h2>
+      <p>[فقرة عن المشروع أو عنك]</p>
+    </section>
+    <section id="contact">
+      <h2>تواصل معنا</h2>
+      <form>
+        <label for="name">الاسم</label>
+        <input type="text" id="name" required>
+        <label for="phone">رقم الهاتف</label>
+        <input type="tel" id="phone">
+        <button type="submit">إرسال</button>
+      </form>
+      <p id="thanks" hidden>شكرًا لك، سنتواصل معك قريبًا.</p>
+    </section>
+  </main>
+  <footer>&copy; 2026 [اسم مشروعك]</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

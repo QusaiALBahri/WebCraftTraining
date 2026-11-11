@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WebCraft</title>
+<meta name="description" content="WebCraft: تدريب أساسيات تصميم وتطوير المواقع الإلكترونية – مؤسسة ولي العهد، مكتب المفرق. محرر أكواد للهاتف، والتمارين وحلولها، وقالب المشروع النهائي.">
+<meta name="theme-color" content="#1D2B53">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Lalezar&family=Cairo:wght@400;700&display=swap">
+<style>
+/* Layout: an 8-bit "title screen" – logo + START, then the levels map (one card per exercise), a how-to-play strip, credits.
+   Palette is the PICO-8 fantasy-console palette; single deliberate dark look. */
+:root{
+  --night:#1D2B53; --ink:#000000; --cream:#FFF1E8; --grey:#C2C3C7; --slate:#83769C;
+  --orange:#FFA300; --red:#FF004D; --yellow:#FFEC27; --green:#00E436; --blue:#29ADFF; --plum:#7E2553;
+  --pixel:"Press Start 2P", "Courier New", monospace;
+  --display:"Lalezar", "Cairo", Tahoma, sans-serif;
+  --body:"Cairo", Tahoma, "Segoe UI", sans-serif;
+  --px:4px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--night)}
+body{margin:0;background:var(--night);color:var(--cream);font-family:var(--body);font-size:17px;line-height:1.8;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* CRT scanlines */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.18) 0 2px, transparent 2px 4px);mix-blend-mode:multiply}
+a{color:inherit}
+:focus-visible{outline:var(--px) dashed var(--yellow);outline-offset:var(--px)}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.latin{font-family:var(--pixel);direction:ltr;unicode-bidi:isolate;letter-spacing:0}
+
+/* Pixel box: stepped corners via box-shadow */
+.pbox{position:relative;background:var(--cream);color:var(--night);
+  box-shadow:0 calc(-1*var(--px)) 0 0 var(--ink),0 var(--px) 0 0 var(--ink),calc(-1*var(--px)) 0 0 0 var(--ink),var(--px) 0 0 0 var(--ink),
+  0 calc(3*var(--px)) 0 0 rgba(0,0,0,.45)}
+
+/* Stars */
+.stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.stars i{position:absolute;width:var(--px);height:var(--px);background:var(--cream);opacity:.7}
+@media (prefers-reduced-motion:no-preference){.stars i:nth-child(3n){animation:tw 1.6s steps(2) infinite}.blink{animation:blink 1s steps(2) infinite}}
+@keyframes tw{50%{opacity:.15}}
+@keyframes blink{50%{opacity:0}}
+
+/* Hero / title screen */
+.hero{position:relative;padding-block:56px 40px;text-align:center;overflow:hidden}
+.org{font-size:15px;color:var(--grey);margin:0 0 18px}
+.logo{margin:0;font-family:var(--pixel);font-size:clamp(30px,8vw,64px);line-height:1.25;color:var(--orange);direction:ltr;
+  text-shadow:var(--px) var(--px) 0 var(--plum),calc(2*var(--px)) calc(2*var(--px)) 0 var(--ink)}
+.logo span{color:var(--cream)}
+.tagline{font-family:var(--display);font-size:clamp(24px,4.6vw,38px);font-weight:400;line-height:1.5;margin:18px auto 6px;max-width:22ch;text-wrap:balance}
+.meta{font-size:15px;color:var(--grey);margin:0}
+.sprite{display:block;margin:28px auto 8px;width:192px;height:192px;image-rendering:pixelated;max-width:100%}
+.press{font-family:var(--pixel);font-size:12px;color:var(--yellow);margin:14px 0 22px;direction:ltr}
+.ctas{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:12px;font-family:var(--display);font-size:22px;text-decoration:none;padding:12px 24px;cursor:pointer;
+  background:var(--orange);color:var(--ink);transition:transform .05s steps(1)}
+.btn.alt{background:var(--blue)}
+.btn:hover{background:var(--yellow)}
+.btn:active{transform:translateY(var(--px));box-shadow:0 calc(-1*var(--px)) 0 0 var(--ink),0 var(--px) 0 0 var(--ink),calc(-1*var(--px)) 0 0 0 var(--ink),var(--px) 0 0 0 var(--ink)}
+.btn .latin{font-size:12px}
+
+/* Section titles */
+section{padding-block:40px}
+.stitle{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 26px}
+.stitle h2{font-family:var(--display);font-weight:400;font-size:32px;margin:0;line-height:1.3}
+.stitle .latin{font-size:11px;color:var(--yellow)}
+
+/* Level map */
+.levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 26px}
+@media (max-width:640px){.levels{grid-template-columns:1fr}}
+.level{padding:22px 22px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.level .tag{align-self:flex-start;font-family:var(--pixel);font-size:10px;line-height:1;padding:8px 10px;color:var(--ink);direction:ltr}
+.level h3{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.35}
+.level p{margin:0;color:#3B3F5C}
+.level .skills{font-family:var(--pixel);font-size:9px;line-height:2;color:var(--slate);direction:ltr;text-align:right}
+.level .links{display:flex;gap:18px;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+.level .links a{font-weight:700;color:var(--night);text-decoration:none;border-bottom:var(--px) solid currentColor}
+.level .links a:hover{color:var(--red)}
+.hearts{display:flex;gap:4px;direction:ltr;justify-content:flex-end}
+.hearts canvas{width:20px;height:18px;image-rendering:pixelated}
+.l1 .tag{background:var(--orange)} .l2 .tag{background:var(--blue)} .l3 .tag{background:var(--green)} .l4 .tag{background:var(--yellow)}
+.boss{grid-column:1/-1;background:var(--plum);color:var(--cream);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.boss .tag{background:var(--red);color:var(--cream)}
+.boss p{color:#F3D9E6}
+.boss .links a{color:var(--yellow)}
+.boss canvas.bosssprite{width:128px;height:128px;image-rendering:pixelated}
+
+/* How to play */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:26px}
+.steps li{padding:18px 20px;display:flex;gap:14px;align-items:flex-start}
+.steps .n{flex:0 0 auto;font-family:var(--pixel);font-size:16px;background:var(--night);color:var(--yellow);padding:8px 10px;line-height:1}
+.steps strong{display:block;font-family:var(--display);font-weight:400;font-size:21px;line-height:1.4}
+.steps span{color:#3B3F5C;font-size:15px}
+.dark-strip{background:#151F40;border-block:var(--px) solid var(--ink)}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px;align-items:center;color:var(--grey);font-size:15px}
+.key{font-family:var(--pixel);font-size:12px;background:var(--cream);color:var(--night);padding:8px 10px;direction:ltr;
+  box-shadow:0 var(--px) 0 0 var(--slate)}
+
+/* Footer */
+footer{padding-block:40px 56px;text-align:center;color:var(--grey);font-size:14px}
+footer .over{font-family:var(--pixel);font-size:14px;color:var(--red);margin:0 0 12px;direction:ltr}
+footer p{margin:4px 0}
+
+@media (max-width:560px){
+  .boss{grid-template-columns:1fr;justify-items:start}
+  .boss canvas.bosssprite{width:96px;height:96px}
+  .btn{font-size:20px;padding:10px 18px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="stars" aria-hidden="true" id="stars"></div>
+  <div class="wrap" style="position:relative">
+    <p class="org">مؤسسة ولي العهد – مكتب المفرق</p>
+    <h1 class="logo">WEB<span>CRAFT</span></h1>
+    <p class="tagline">أساسيات تصميم وتطوير المواقع الإلكترونية</p>
+    <p class="meta">يومان تدريبيان · 11 و12 تشرين الثاني 2026</p>
+    <canvas class="sprite" id="hero" width="32" height="32" aria-label="رسمة بكسلية لهاتف يعرض رمز الكود"></canvas>
+    <p class="press"><span class="blink">PRESS START</span></p>
+    <div class="ctas">
+      <a class="btn pbox" href="editor/">▶ افتح محرر الأكواد</a>
+      <a class="btn alt pbox" href="WebCraft-files.zip" download>تحميل ملفات التدريب <span class="latin">ZIP</span></a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="stitle"><h2>خريطة المراحل</h2><span class="latin">SELECT LEVEL</span></div>
+      <div class="levels">
+        <article class="level pbox l1">
+          <span class="tag">LEVEL 1 · HTML</span>
+          <h3>ابنِ صفحتك التعريفية</h3>
+          <p>هيكل الصفحة: العناوين والروابط والصور والقوائم والنماذج والوسوم الدلالية.</p>
+          <div class="skills">header · nav · section · form</div>
+          <div class="links"><a href="files/01-tamreen1-start/">البداية</a><a href="files/02-tamreen1-solution/">شاهد الحل</a></div>
+        </article>
+        <article class="level pbox l2">
+          <span class="tag">LEVEL 2 · CSS</span>
+          <h3>نسّق صفحتك</h3>
+          <p>الألوان والخطوط، ونموذج الصندوق، وصفّ العناصر بـ Flexbox.</p>
+          <div class="skills">selectors · box model · flexbox</div>
+          <div class="links"><a href="files/03-tamreen2-solution/">شاهد الحل</a></div>
+        </article>
+        <article class="level pbox l3">
+          <span class="tag">LEVEL 3 · RESPONSIVE</span>
+          <h3>اجعلها تعمل على كل شاشة</h3>
+          <p>الهاتف أولًا، ثم Media Queries للأجهزة اللوحية والحواسيب.</p>
+          <div class="skills">viewport · @media · mobile-first</div>
+          <div class="links"><a href="files/04-tamreen3-solution/">شاهد الحل</a></div>
+        </article>
+        <article class="level pbox l4">
+          <span class="tag">LEVEL 4 · JAVASCRIPT</span>
+          <h3>زر الوضع الليلي</h3>
+          <p>اختر عنصرًا، استمع لحدث، غيّر شيئًا. ثم رسالة شكر عند إرسال النموذج.</p>
+          <div class="skills">querySelector · click · classList</div>
+          <div class="links"><a href="files/05-tamreen4-solution/">شاهد الحل</a></div>
+        </article>
+        <article class="level pbox boss">
+          <canvas class="bosssprite" id="boss" width="16" height="16" aria-hidden="true"></canvas>
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <span class="tag">BOSS LEVEL · FINAL PROJECT</span>
+            <h3>المشروع النهائي: موقعك الأول</h3>
+            <p>موقع مبسّط ومتجاوب لفكرتك: مقهى في المفرق، أو ملف أعمالك، أو مبادرة شبابية. فيه قسم ترحيبي وثلاث بطاقات ونموذج تواصل ولمسة JavaScript.</p>
+            <div class="links"><a href="files/06-final-project-template/">شاهد القالب</a><a href="editor/">ابدأ في المحرر</a></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark-strip">
+    <div class="wrap">
+      <div class="stitle"><h2>طريقة اللعب على الهاتف</h2><span class="latin">HOW TO PLAY</span></div>
+      <ol class="steps">
+        <li class="pbox"><span class="n latin">1</span><div><strong>افتح المحرر</strong><span>من متصفح هاتفك مباشرة، بلا تطبيق ولا حساب.</span></div></li>
+        <li class="pbox"><span class="n latin">2</span><div><strong>اختر التمرين</strong><span>من القائمة العلوية: بداية التمرين أو حلّه.</span></div></li>
+        <li class="pbox"><span class="n latin">3</span><div><strong>اكتب وشاهد</strong><span>HTML وCSS وJS في تبويبات، والمعاينة بضغطة.</span></div></li>
+        <li class="pbox"><span class="n latin">4</span><div><strong>احفظ وأرسل</strong><span>الحفظ تلقائي، و«نسخ الصفحة كاملة» لإرسالها على واتساب.</span></div></li>
+      </ol>
+      <div class="controls" aria-label="أزرار الرموز في المحرر">
+        <span>أزرار الرموز في المحرر:</span>
+        <span class="key">&lt;</span><span class="key">&gt;</span><span class="key">/</span><span class="key">{</span><span class="key">}</span><span class="key">;</span><span class="key">"</span><span class="key">=</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="stitle"><h2>عندك حاسوب؟</h2><span class="latin">PC MODE</span></div>
+      <div class="pbox" style="padding:22px 24px;max-width:70ch">
+        <p style="margin:0 0 8px;color:#3B3F5C">حمّل ملفات التدريب وافتح مجلد أي تمرين في <span class="latin" style="font-size:11px">VS Code</span>، ثم شغّل <span class="latin" style="font-size:11px">index.html</span> بإضافة <span class="latin" style="font-size:11px">Live Server</span>. كل مجلد فيه ثلاثة ملفات: الهيكل والتنسيق والتفاعل.</p>
+        <a class="btn alt pbox" style="margin-top:14px" href="WebCraft-files.zip" download>تحميل ملفات التدريب <span class="latin">ZIP</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="over">CONTINUE? 9…8…7…</p>
+    <p>ابدأ صغيرًا، وابنِ كثيرًا، واستمر في التعلّم.</p>
+    <p>WebCraft · مؤسسة ولي العهد – مكتب المفرق · 2026</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Pixel art from string maps. Palette keys -> PICO-8 colors.
+  var P={".":null,k:"#000000",n:"#1D2B53",c:"#FFF1E8",g:"#C2C3C7",o:"#FFA300",y:"#FFEC27",b:"#29ADFF",r:"#FF004D",p:"#7E2553",G:"#00E436",s:"#83769C"};
+  function draw(id,rows){
+    var cv=document.getElementById(id); if(!cv) return; var ctx=cv.getContext("2d");
+    rows.forEach(function(row,y){ for(var x=0;x<row.length;x++){ var c=P[row[x]]; if(c){ctx.fillStyle=c;ctx.fillRect(x,y,1,1);} } });
+  }
+  // 32x32 phone showing </> with a cursor
+  draw("hero",[
+"................................",
+"..........kkkkkkkkkkkk..........",
+".........kssssssssssssk.........",
+"........kssssssssssssssk........",
+"........ksskkkkkkkkkkssk........",
+"........kskbbbbbbbbbbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnnonnnnnbksk........",
+"........kskbnonnnynnbksk........",
+"........kskbonnnynnobksk........",
+"........kskbnonnynonbksk........",
+"........kskbnnonynonbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbncccccnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnGGGnnnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnccnnnnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnrrrrnnnbksk........",
+"........kskbnnnnnnnnbksk........",
+"........kskbnnnnnnGnbksk........",
+"........kskbbbbbbbbbbksk........",
+"........ksskkkkkkkkkkssk........",
+"........kssssssssssssssk........",
+"........ksssssskkssssssk........",
+"........kssssssssssssssk........",
+".........kssssssssssssk.........",
+"..........kkkkkkkkkkkk..........",
+"................................"
+  ]);
+  // 16x16 boss: a pixel trophy
+  draw("boss",[
+"................",
+"...yyyyyyyyyy...",
+".yyyoooooooooyy.",
+".y.yoooooooooy.y",
+".y.yoooyyooooy.y",
+"..yyoooyyooooyy.",
+"....yoooooooy...",
+".....yoooooy....",
+"......yoooy.....",
+".......yoy......",
+".......yoy......",
+"......yyyyy.....",
+".....oooooooo...",
+".....okkkkkko...",
+".....oooooooo...",
+"................"
+  ]);
+  // Twinkling stars in the title screen
+  var st=document.getElementById("stars"); if(st){ var seed=7; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+    for(var i=0;i<46;i++){ var s=document.createElement("i"); s.style.left=(rnd()*100)+"%"; s.style.top=(rnd()*100)+"%"; if(i%5===0){s.style.background="#FFEC27"} st.appendChild(s); } }
+})();
+</script>
+</body>
+</html>

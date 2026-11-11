@@ -1,0 +1,32 @@
+* { box-sizing: border-box; }
+body {
+  font-family: "Cairo", sans-serif;
+  background: #F7F6F2;
+  color: #1B1F3B;
+  line-height: 1.8;
+  margin: 0;
+  padding: 16px;
+}
+nav { display: flex; gap: 16px; }
+nav a {
+  color: #1B1F3B;
+  text-decoration: none;
+}
+nav a:hover { color: #E8742E; }
+img { width: 160px; border-radius: 50%; }
+.skills { list-style: none; padding: 0; }
+.card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  margin-bottom: 12px;
+}
+label { display: block; margin-top: 8px; }
+input, textarea { width: 100%; padding: 10px; }
+button {
+  background: #E8742E; color: white;
+  border: none; padding: 12px 24px;
+  border-radius: 8px;
+  margin-top: 12px;
+}

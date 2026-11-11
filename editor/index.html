@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B1F3B">
+<style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>WebCraft Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen phone app. Header (exercise picker + menu), tabs, symbol bar, editor/preview fill the rest; side-by-side on wide screens. */
+:root{
+  --bg:#F4F2EC; --panel:#FFFDF8; --ink:#1B1F3B; --muted:#5E6378; --line:#DEDACF;
+  --accent:#C9601F; --accent-ink:#FFFFFF; --teal:#1F7A70;
+  --code-bg:#1B1F3B; --code-ink:#ECEAE3; --key-bg:#E9E5DA;
+  --err:#B42318; --err-bg:#FDECEA; --ok:#1F7A70;
+  --f-ui:"IBM Plex Sans Arabic", Tahoma, "Segoe UI", sans-serif;
+  --f-code:"JetBrains Mono", "IBM Plex Sans Arabic", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12152B; --panel:#1B1F3B; --ink:#ECEAE3; --muted:#A3A8BE; --line:#2F3560;
+  --accent:#F2A65A; --accent-ink:#1B1F3B; --teal:#6CC3B5;
+  --code-bg:#0D1024; --code-ink:#ECEAE3; --key-bg:#262B4E;
+  --err:#FF8A7A; --err-bg:#3A2226; --ok:#6CC3B5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12152B; --panel:#1B1F3B; --ink:#ECEAE3; --muted:#A3A8BE; --line:#2F3560;
+  --accent:#F2A65A; --accent-ink:#1B1F3B; --teal:#6CC3B5;
+  --code-bg:#0D1024; --code-ink:#ECEAE3; --key-bg:#262B4E;
+  --err:#FF8A7A; --err-bg:#3A2226; --ok:#6CC3B5; color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;overflow:hidden}
+*{box-sizing:border-box}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{height:100%;display:flex;flex-direction:column;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:10px;gap:8px}
+
+.top{display:flex;align-items:center;gap:8px}
+.brand{font-weight:600;font-size:15px;white-space:nowrap}
+.brand b{color:var(--accent)}
+.picker{flex:1;min-width:0;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 10px}
+.btn{height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.status{font-size:12px;color:var(--muted);white-space:nowrap}
+.status.saved{color:var(--ok)}
+
+.tabs{display:flex;gap:4px;background:var(--key-bg);border-radius:12px;padding:4px}
+.tab{flex:1;height:38px;border:0;border-radius:9px;background:transparent;font-weight:600;font-family:var(--f-code);font-size:14px;position:relative}
+.tab[aria-selected="true"]{background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.tab.preview-tab{font-family:var(--f-ui)}
+.badge{position:absolute;top:4px;inset-inline-start:6px;min-width:18px;height:18px;border-radius:9px;background:var(--err);color:#fff;font-size:11px;line-height:18px;padding:0 5px;font-family:var(--f-ui)}
+
+.work{flex:1;min-height:0;display:flex;gap:10px}
+.editor-pane,.preview-pane{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px}
+
+.keys{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;direction:ltr}
+.keys::-webkit-scrollbar{display:none}
+.key{flex:0 0 auto;min-width:38px;height:38px;border:0;border-radius:8px;background:var(--key-bg);font-family:var(--f-code);font-size:17px;font-weight:700;padding:0 8px;touch-action:manipulation}
+.key.wide{font-family:var(--f-ui);font-size:13px;font-weight:600}
+.key:active{background:var(--accent);color:var(--accent-ink)}
+
+.hint{font-size:12px;color:var(--muted)}
+textarea.code{flex:1;min-height:0;width:100%;resize:none;border:0;border-radius:12px;background:var(--code-bg);color:var(--code-ink);font-family:var(--f-code);font-size:16px;line-height:1.55;padding:12px 14px;direction:ltr;text-align:left;tab-size:2;white-space:pre;overflow:auto}
+
+.frame-wrap{flex:1;min-height:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.console{max-height:34%;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:13px}
+.console-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.console-head strong{font-size:13px}
+.console-head button{border:0;background:none;color:var(--muted);font-size:12px}
+.log{padding:6px 10px;border-bottom:1px solid var(--line);font-family:var(--f-code);direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word}
+.log.err{background:var(--err-bg);color:var(--err)}
+.log .where{font-family:var(--f-ui);direction:rtl;display:block;text-align:right;font-size:12px;margin-top:2px}
+.log .where button{border:0;background:none;color:inherit;text-decoration:underline;padding:0;font-size:12px}
+.log.empty{font-family:var(--f-ui);direction:rtl;text-align:right;color:var(--muted)}
+
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:10px 12px}
+.bar p{margin:0;flex:1 1 180px}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(10,12,30,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:520px;max-height:85%;overflow:auto;background:var(--panel);border-radius:18px 18px 0 0;padding:16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:8px}
+.sheet h2{margin:0 0 4px;font-size:17px}
+.sheet .item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:right;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:12px 14px}
+.sheet .item span{font-size:12px;color:var(--muted)}
+.sheet p{margin:0;line-height:1.7;color:var(--muted)}
+.sheet code{font-family:var(--f-code);direction:ltr;unicode-bidi:isolate}
+textarea.export{width:100%;height:200px;font-family:var(--f-code);font-size:13px;direction:ltr;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:8px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:30;max-width:90%;text-align:center}
+
+/* Phone: one pane at a time */
+@media (max-width: 899px){
+  .app[data-view="preview"] .editor-pane{display:none}
+  .app:not([data-view="preview"]) .preview-pane{display:none}
+}
+/* Wide: editor and preview side by side; preview tab not needed */
+@media (min-width: 900px){
+  .tab.preview-tab{display:none}
+  .work{flex-direction:row}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app" data-view="html" dir="rtl">
+  <div class="top">
+    <span class="brand"><b>Web</b>Craft</span>
+    <select class="picker" id="picker" aria-label="اختر تمرينًا"></select>
+    <button class="btn" id="menuBtn" type="button">القائمة</button>
+  </div>
+
+  <div class="bar" id="confirmBar" hidden>
+    <p id="confirmText"></p>
+    <button class="btn primary" id="confirmYes" type="button">استبدال</button>
+    <button class="btn" id="confirmNo" type="button">إلغاء</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="html" aria-selected="true" type="button">HTML</button>
+    <button class="tab" role="tab" data-tab="css" aria-selected="false" type="button">CSS</button>
+    <button class="tab" role="tab" data-tab="js" aria-selected="false" type="button">JS</button>
+    <button class="tab preview-tab" role="tab" data-tab="preview" aria-selected="false" type="button">المعاينة<span class="badge" id="badge" hidden>0</span></button>
+  </div>
+
+  <div class="work">
+    <section class="editor-pane" aria-label="المحرر">
+      <div class="keys" id="keys"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span class="hint" id="fileHint">محتوى body فقط · الهيكل الأساسي يُضاف تلقائيًا</span>
+        <span class="status saved" id="status">محفوظ</span>
+      </div>
+      <textarea class="code" id="code" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" wrap="off" aria-label="الكود"></textarea>
+    </section>
+
+    <section class="preview-pane" aria-label="المعاينة">
+      <div class="frame-wrap"><iframe id="frame" title="معاينة الصفحة" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe></div>
+      <div class="console" id="console">
+        <div class="console-head"><strong>الرسائل والأخطاء</strong><button id="clearLog" type="button">مسح</button></div>
+        <div id="logs"><div class="log empty">لا توجد أخطاء. رسائل console.log تظهر هنا.</div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+<div id="sheetRoot"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Exercise content (matches the WebCraft slides) ---------- */
+var L1_HTML = [
+'<header>',
+'  <h1>سارة أحمد</h1>',
+'  <nav>',
+'    <a href="#about">من أنا</a>',
+'    <a href="#skills">مهاراتي</a>',
+'    <a href="#contact">تواصل معي</a>',
+'  </nav>',
+'</header>',
+'<main>',
+'  <section id="about">',
+'    <h2>من أنا</h2>',
+'    <img src="images/me.jpg" alt="صورة سارة">',
+'    <p>أتعلّم تطوير الويب في المفرق.</p>',
+'  </section>',
+'  <section id="skills">',
+'    <h2>مهاراتي</h2>',
+'    <ul class="skills">',
+'      <li class="card">HTML</li>',
+'      <li class="card">CSS</li>',
+'      <li class="card">JavaScript</li>',
+'    </ul>',
+'  </section>',
+'  <section id="contact">',
+'    <h2>تواصل معي</h2>',
+'    <form>',
+'      <label for="name">الاسم</label>',
+'      <input type="text" id="name" required>',
+'      <label for="email">البريد</label>',
+'      <input type="email" id="email">',
+'      <label for="msg">رسالتك</label>',
+'      <textarea id="msg"></textarea>',
+'      <button type="submit">إرسال</button>',
+'    </form>',
+'  </section>',
+'</main>',
+'<footer>&copy; 2026 سارة أحمد</footer>'
+].join('\n');
+
+var L2_CSS = [
+'* { box-sizing: border-box; }',
+'body {',
+'  font-family: "Cairo", sans-serif;',
+'  background: #F7F6F2;',
+'  color: #1B1F3B;',
+'  line-height: 1.8;',
+'  margin: 0;',
+'  padding: 16px;',
+'}',
+'nav { display: flex; gap: 16px; }',
+'nav a {',
+'  color: #1B1F3B;',
+'  text-decoration: none;',
+'}',
+'nav a:hover { color: #E8742E; }',
+'img { width: 160px; border-radius: 50%; }',
+'.skills { list-style: none; padding: 0; }',
+'.card {',
+'  background: white;',
+'  padding: 24px;',
+'  border-radius: 12px;',
+'  box-shadow: 0 4px 12px rgba(0,0,0,.1);',
+'  margin-bottom: 12px;',
+'}',
+'label { display: block; margin-top: 8px; }',
+'input, textarea { width: 100%; padding: 10px; }',
+'button {',
+'  background: #E8742E; color: white;',
+'  border: none; padding: 12px 24px;',
+'  border-radius: 8px;',
+'  margin-top: 12px;',
+'}'
+].join('\n');
+
+var L3_CSS = L2_CSS + '\n\n' + [
+'/* تمرين 3: التصميم المتجاوب */',
+'img { max-width: 100%; height: auto; }',
+'nav { flex-wrap: wrap; }',
+'.skills {',
+'  display: flex;',
+'  flex-direction: column;',
+'  gap: 16px;',
+'}',
+'.card { margin-bottom: 0; }',
+'@media (min-width: 768px) {',
+'  .skills { flex-direction: row; }',
+'  .card { flex: 1; }',
+'  nav { justify-content: space-between; }',
+'}'
+].join('\n');
+
+var L4_HTML = L1_HTML.replace('  </nav>\n</header>', '  </nav>\n  <button id="themeBtn">الوضع الليلي</button>\n</header>');
+
+var L4_CSS = L3_CSS + '\n\n' + [
+'/* تمرين 4: الوضع الليلي */',
+'body.dark {',
+'  background: #1B1F3B;',
+'  color: #F7F6F2;',
+'}',
+'body.dark a { color: #F2A65A; }',
+'body.dark .card { background: #262B4E; }'
+].join('\n');
+
+var L4_JS = [
+'const btn = document.querySelector("#themeBtn");',
+'',
+'btn.addEventListener("click", function () {',
+'  document.body.classList.toggle("dark");',
+'',
+'  // تحدٍّ 5: تغيير نص الزر',
+'  if (document.body.classList.contains("dark")) {',
+'    btn.textContent = "الوضع النهاري";',
+'  } else {',
+'    btn.textContent = "الوضع الليلي";',
+'  }',
+'});',
+'',
+'// تحدٍّ 6: رسالة شكر عند إرسال النموذج',
+'const form = document.querySelector("form");',
+'form.addEventListener("submit", function (e) {',
+'  e.preventDefault();',
+'  form.innerHTML = "<p>شكرًا، وصلت رسالتك</p>";',
+'});'
+].join('\n');
+
+var START_HTML = [
+'<!-- تمرين 1: ابنِ صفحتك التعريفية -->',
+'<!-- اكتب هنا محتوى body فقط -->',
+'',
+'<!-- 1) header فيه اسمك، و nav فيه ثلاثة روابط -->',
+'',
+'',
+'<!-- 2) قسم «من أنا»: عنوان وفقرة وصورة -->',
+'',
+'',
+'<!-- 3) قسم «مهاراتي»: قائمة ul -->',
+'',
+'',
+'<!-- 4) قسم «تواصل معي»: نموذج فيه اسم وبريد ورسالة وزر -->',
+''
+].join('\n');
+
+var P_HTML = [
+'<header>',
+'  <h1>[اسم مشروعك]</h1>',
+'  <nav>',
+'    <a href="#services">خدماتنا</a>',
+'    <a href="#about">من نحن</a>',
+'    <a href="#contact">تواصل</a>',
+'  </nav>',
+'</header>',
+'<main>',
+'  <section class="hero">',
+'    <h2>[جملة ترحيبية تشرح فكرتك]</h2>',
+'    <p>[وصف قصير: ماذا تقدّم ولمن]</p>',
+'    <a class="cta" href="#contact">[احجز الآن]</a>',
+'  </section>',
+'  <section id="services">',
+'    <h2>خدماتنا</h2>',
+'    <div class="cards">',
+'      <article class="card">',
+'        <img src="images/1.jpg" alt="[وصف الصورة]">',
+'        <h3>[الخدمة الأولى]</h3>',
+'        <p>[وصف قصير]</p>',
+'      </article>',
+'      <article class="card">',
+'        <img src="images/2.jpg" alt="[وصف الصورة]">',
+'        <h3>[الخدمة الثانية]</h3>',
+'        <p>[وصف قصير]</p>',
+'      </article>',
+'      <article class="card">',
+'        <img src="images/3.jpg" alt="[وصف الصورة]">',
+'        <h3>[الخدمة الثالثة]</h3>',
+'        <p>[وصف قصير]</p>',
+'      </article>',
+'    </div>',
+'  </section>',
+'  <section id="about">',
+'    <h2>من نحن</h2>',
+'    <p>[فقرة عن المشروع أو عنك]</p>',
+'  </section>',
+'  <section id="contact">',
+'    <h2>تواصل معنا</h2>',
+'    <form>',
+'      <label for="name">الاسم</label>',
+'      <input type="text" id="name" required>',
+'      <label for="phone">رقم الهاتف</label>',
+'      <input type="tel" id="phone">',
+'      <button type="submit">إرسال</button>',
+'    </form>',
+'    <p id="thanks" hidden>شكرًا لك، سنتواصل معك قريبًا.</p>',
+'  </section>',
+'</main>',
+'<footer>&copy; 2026 [اسم مشروعك]</footer>'
+].join('\n');
+
+var P_CSS = [
+'/* غيّر هذه الألوان الثلاثة لتناسب مشروعك */',
+'* { box-sizing: border-box; }',
+'body {',
+'  font-family: "Cairo", sans-serif;',
+'  margin: 0;',
+'  background: #F7F6F2;',
+'  color: #1B1F3B;',
+'  line-height: 1.8;',
+'}',
+'header, section, footer { padding: 16px; }',
+'header { background: #1B1F3B; color: white; }',
+'nav { display: flex; flex-wrap: wrap; gap: 16px; }',
+'nav a { color: white; text-decoration: none; }',
+'.hero { text-align: center; padding: 40px 16px; }',
+'.cta {',
+'  display: inline-block;',
+'  background: #E8742E; color: white;',
+'  padding: 12px 28px; border-radius: 999px;',
+'  text-decoration: none;',
+'}',
+'.cards { display: flex; flex-direction: column; gap: 16px; }',
+'.card {',
+'  background: white; border-radius: 12px;',
+'  padding: 16px;',
+'  box-shadow: 0 4px 12px rgba(0,0,0,.08);',
+'}',
+'.card img { width: 100%; border-radius: 8px; }',
+'label { display: block; margin-top: 8px; }',
+'input { width: 100%; padding: 10px; }',
+'button {',
+'  margin-top: 12px; background: #E8742E; color: white;',
+'  border: none; padding: 12px 24px; border-radius: 8px;',
+'}',
+'footer { text-align: center; color: #5E6378; }',
+'',
+'@media (min-width: 768px) {',
+'  .cards { flex-direction: row; }',
+'  .card { flex: 1; }',
+'}'
+].join('\n');
+
+var P_JS = [
+'// لمسة تفاعلية: رسالة شكر بعد إرسال النموذج',
+'const form = document.querySelector("form");',
+'const thanks = document.querySelector("#thanks");',
+'',
+'form.addEventListener("submit", function (e) {',
+'  e.preventDefault();',
+'  form.hidden = true;',
+'  thanks.hidden = false;',
+'});'
+].join('\n');
+
+var SLOTS = [
+  {id:"lab1-start", name:"تمرين 1 · البداية", html:START_HTML, css:"/* سنكتب التنسيق في تمرين 2 */\n", js:"// سنكتب JavaScript في تمرين 4\n"},
+  {id:"lab1-sol", name:"تمرين 1 · الحل", html:L1_HTML, css:"/* سنكتب التنسيق في تمرين 2 */\n", js:"// سنكتب JavaScript في تمرين 4\n"},
+  {id:"lab2-sol", name:"تمرين 2 · الحل", html:L1_HTML, css:L2_CSS, js:"// سنكتب JavaScript في تمرين 4\n"},
+  {id:"lab3-sol", name:"تمرين 3 · الحل", html:L1_HTML, css:L3_CSS, js:"// سنكتب JavaScript في تمرين 4\n"},
+  {id:"lab4-sol", name:"تمرين 4 · الحل", html:L4_HTML, css:L4_CSS, js:L4_JS},
+  {id:"project", name:"المشروع النهائي · القالب", html:P_HTML, css:P_CSS, js:P_JS},
+  {id:"blank", name:"صفحة فارغة", html:"", css:"", js:""}
+];
+
+/* ---------- State + storage ---------- */
+var KEY_WS="wc.workspace.v1", KEY_PREV="wc.previous.v1", KEY_IMG="wc.images.v1";
+function load(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+
+var ws = load(KEY_WS);
+if(!ws || typeof ws.html!=="string"){ var s0=SLOTS[0]; ws={slot:s0.id,html:s0.html,css:s0.css,js:s0.js}; }
+var images = load(KEY_IMG) || {};
+var tab = "html";
+
+var $ = function(id){return document.getElementById(id)};
+var app=$("app"), code=$("code"), picker=$("picker"), frame=$("frame"), statusEl=$("status");
+
+/* ---------- Picker ---------- */
+SLOTS.forEach(function(s){var o=document.createElement("option");o.value=s.id;o.textContent=s.name;picker.appendChild(o)});
+picker.value = ws.slot || "lab1-start";
+
+var pendingSlot=null;
+picker.addEventListener("change", function(){
+  var s = SLOTS.filter(function(x){return x.id===picker.value})[0];
+  if(!s) return;
+  var empty = !ws.html.trim() && !ws.css.trim() && !ws.js.trim();
+  if(empty){ applySlot(s); return; }
+  pendingSlot=s;
+  $("confirmText").textContent = "تحميل «"+s.name+"» سيستبدل كودك الحالي. يمكنك استرجاعه لاحقًا من القائمة.";
+  $("confirmBar").hidden=false;
+  picker.value = ws.slot;
+});
+$("confirmYes").addEventListener("click", function(){ if(pendingSlot) applySlot(pendingSlot); hideConfirm(); });
+$("confirmNo").addEventListener("click", hideConfirm);
+function hideConfirm(){ pendingSlot=null; $("confirmBar").hidden=true; }
+
+function applySlot(s){
+  save(KEY_PREV, {html:ws.html,css:ws.css,js:ws.js,slot:ws.slot});
+  ws={slot:s.id,html:s.html,css:s.css,js:s.js};
+  if(tab!=="preview") code.value=ws[tab];
+  picker.value=s.id;
+  persist(); showTab(tab==="preview"?"preview":"html"); render();
+  toast("تم تحميل «"+s.name+"»");
+}
+
+/* ---------- Tabs ---------- */
+var HINTS={html:"محتوى body فقط · الهيكل الأساسي يُضاف تلقائيًا", css:"ملف style.css · مرتبط بالصفحة تلقائيًا", js:"ملف script.js · يعمل بعد تحميل الصفحة"};
+document.querySelectorAll(".tab").forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
+function showTab(t){
+  if(tab!=="preview") ws[tab]=code.value;
+  tab=t;
+  app.dataset.view=t;
+  document.querySelectorAll(".tab").forEach(function(b){ b.setAttribute("aria-selected", String(b.dataset.tab===t)); });
+  if(t==="preview"){ render(); return; }
+  code.value=ws[t];
+  $("fileHint").textContent=HINTS[t];
+  buildKeys(t);
+  if(window.matchMedia("(min-width: 900px)").matches) render();
+}
+
+/* ---------- Symbol keys ---------- */
+var KEYSETS={
+  html:["<",">","/","=","\"","!","-","#","Tab","تراجع","إعادة","صورة"],
+  css:["{","}",":",";",".","#","-","(",")","%","\"","Tab","تراجع","إعادة"],
+  js:["(",")","{","}","\"",";",".","=","#","[","]","Tab","تراجع","إعادة"]
+};
+function buildKeys(t){
+  var box=$("keys"); box.innerHTML="";
+  KEYSETS[t].forEach(function(k){
+    var b=document.createElement("button"); b.type="button"; b.className="key"+(k.length>1?" wide":"");
+    b.textContent = k==="Tab" ? "مسافة ⇥" : k;
+    b.addEventListener("pointerdown", function(e){ e.preventDefault(); });
+    b.addEventListener("mousedown", function(e){ e.preventDefault(); });
+    b.addEventListener("click", function(){
+      if(k==="صورة"){ openImageSheet(); return; }
+      if(k==="تراجع"){ code.focus(); document.execCommand("undo"); return; }
+      if(k==="إعادة"){ code.focus(); document.execCommand("redo"); return; }
+      insert(k==="Tab" ? "  " : k);
+    });
+    box.appendChild(b);
+  });
+}
+function insert(text){
+  code.focus();
+  var ok=false;
+  try{ ok=document.execCommand("insertText", false, text); }catch(e){}
+  if(!ok){
+    var s=code.selectionStart, e2=code.selectionEnd;
+    code.setRangeText(text, s, e2, "end");
+    code.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+}
+code.addEventListener("keydown", function(e){
+  if(e.key==="Tab"){ e.preventDefault(); insert("  "); }
+});
+
+/* ---------- Typing fixes for phones: smart quotes and Arabic punctuation ---------- */
+function cleanTyping(){
+  var v=code.value, n=v.replace(/[“”„«»]/g,'"').replace(/[‘’]/g,"'");
+  if(tab==="css") n=n.replace(/؛/g,";").replace(/،/g,",");
+  if(tab==="js") n=n.replace(/؛/g,";");
+  if(n!==v){ var p=code.selectionStart; code.value=n; code.setSelectionRange(p,p); }
+}
+
+/* ---------- Autosave + live preview ---------- */
+var saveTimer=null, renderTimer=null;
+code.addEventListener("input", function(){
+  cleanTyping();
+  ws[tab]=code.value;
+  statusEl.textContent="يُحفظ…"; statusEl.classList.remove("saved");
+  clearTimeout(saveTimer); saveTimer=setTimeout(persist, 400);
+  if(window.matchMedia("(min-width: 900px)").matches){ clearTimeout(renderTimer); renderTimer=setTimeout(render, 600); }
+});
+function persist(){
+  var ok=save(KEY_WS, ws);
+  statusEl.textContent= ok ? "محفوظ" : "غير محفوظ (التخزين متوقف)";
+  statusEl.classList.toggle("saved", ok);
+}
+
+/* ---------- Images: uploaded photos stand in for images/... paths ---------- */
+var PLACEHOLDER = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#DCEFEC"/><circle cx="200" cy="150" r="60" fill="#9CCFC6"/><rect x="100" y="230" width="200" height="80" rx="40" fill="#9CCFC6"/><text x="200" y="360" font-family="Tahoma,sans-serif" font-size="24" text-anchor="middle" fill="#1F7A70">ارفع صورة من القائمة</text></svg>');
+function resolveImages(text){
+  return text.replace(/images\/[A-Za-z0-9_\-\.]+/g, function(p){ return images[p] || PLACEHOLDER; });
+}
+function referencedImages(){
+  var found={}, re=/images\/[A-Za-z0-9_\-\.]+/g, m, all=ws.html+"\n"+ws.css;
+  while((m=re.exec(all))) found[m[0]]=true;
+  return Object.keys(found);
+}
+var imageTarget=null;
+function openImageSheet(){
+  var refs=referencedImages();
+  var html='<h2>إضافة صورة من هاتفك</h2><p>اختر الصورة التي تريد استبدالها، أو أضف صورة جديدة في مكان المؤشر.</p>';
+  refs.forEach(function(r){ html+='<button class="item" type="button" data-target="'+r+'"><strong>استبدال <code>'+r+'</code></strong><span>'+(images[r]?"مرفوعة ✓ · اضغط لتغييرها":"لم تُرفع بعد")+'</span></button>'; });
+  html+='<button class="item" type="button" data-target="__new"><strong>صورة جديدة</strong><span>تُضاف في مكان المؤشر في HTML</span></button>';
+  html+='<button class="btn" type="button" data-close>إغلاق</button>';
+  openSheet(html, function(btn){
+    var t=btn.getAttribute("data-target"); if(!t) return;
+    imageTarget=t; $("fileInput").value=""; $("fileInput").click(); closeSheet();
+  });
+}
+$("fileInput").addEventListener("change", function(){
+  var f=this.files && this.files[0]; if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=700, sc=Math.min(1, max/Math.max(img.width,img.height));
+      var c=document.createElement("canvas"); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      var data=c.toDataURL("image/jpeg",0.78);
+      var path=imageTarget;
+      if(path==="__new"){ var i=1; while(images["images/photo"+i+".jpg"]) i++; path="images/photo"+i+".jpg";
+        if(tab!=="html") showTab("html");
+        insert('<img src="'+path+'" alt="">');
+      }
+      images[path]=data;
+      if(!save(KEY_IMG, images)) toast("الصورة تعمل الآن لكنها لن تُحفظ بعد إغلاق الصفحة");
+      else toast("تمت إضافة الصورة: "+path);
+      render();
+    };
+    img.onerror=function(){ toast("تعذّر قراءة الصورة. جرّب صورة أخرى."); };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(f);
+});
+
+/* ---------- Building the page shown in the preview ---------- */
+var SHIM = [
+'(function(){',
+'function send(type,msg,line){try{parent.postMessage({wc:1,type:type,msg:String(msg),line:line||0},"*")}catch(e){}}',
+'window.addEventListener("error",function(e){send("error",e.message,e.lineno)});',
+'window.addEventListener("unhandledrejection",function(e){send("error",e.reason)});',
+'["log","warn","error","info"].forEach(function(k){var o=console[k];console[k]=function(){var a=[].slice.call(arguments).map(function(x){try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(_){return String(x)}});send(k==="error"?"error":"log",a.join(" "));o&&o.apply(console,arguments)}});',
+'window.alert=function(m){send("alert",m)};',
+'window.addEventListener("submit",function(e){if(!e.defaultPrevented){e.preventDefault();send("alert","تم إرسال النموذج (تجربة فقط، لا يُرسل لأي مكان)")}});',
+'document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(h&&h.charAt(0)==="#"){e.preventDefault();var t=h.length>1&&document.getElementById(h.slice(1));if(t)t.scrollIntoView({behavior:"smooth"})}else if(h&&!/^https?:/i.test(h)){e.preventDefault();send("alert","هذا الرابط يفتح صفحة أخرى ("+h+") غير موجودة في هذا المحرر")}});',
+'})();'
+].join('\n');
+
+var JS_LINE_OFFSET=0;
+function buildDoc(forExport){
+  var css = forExport ? ws.css : resolveImages(ws.css);
+  var html = forExport ? ws.html : resolveImages(ws.html);
+  var head = '<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>WebCraft</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap">\n';
+  if(!forExport) head += '<script>'+SHIM+'<\/script>\n';
+  head += '<style>\n'+css+'\n</style>\n</head>\n<body>\n'+html+'\n';
+  var before = head + '<script>\n';
+  if(!forExport) JS_LINE_OFFSET = before.split("\n").length - 1;
+  return before + ws.js + '\n<\/script>\n</body>\n</html>\n';
+}
+
+var errCount=0;
+function render(){
+  if(tab!=="preview") ws[tab]=code.value;
+  clearLogs();
+  frame.srcdoc = buildDoc(false);
+}
+
+/* ---------- Console panel ---------- */
+function clearLogs(){ errCount=0; updateBadge(); $("logs").innerHTML='<div class="log empty">لا توجد أخطاء. رسائل console.log تظهر هنا.</div>'; }
+$("clearLog").addEventListener("click", clearLogs);
+function addLog(type,msg,line){
+  var box=$("logs"); var e=box.querySelector(".empty"); if(e) e.remove();
+  var d=document.createElement("div"); d.className="log"+(type==="error"?" err":"");
+  d.textContent = type==="alert" ? "رسالة: "+msg : msg;
+  if(type==="error"){
+    errCount++; updateBadge();
+    var jsLine = line ? line - JS_LINE_OFFSET : 0;
+    var w=document.createElement("span"); w.className="where";
+    if(jsLine>0 && jsLine <= ws.js.split("\n").length+1){
+      var b=document.createElement("button"); b.type="button"; b.textContent="خطأ في JS · السطر "+jsLine+" · اضغط للانتقال إليه";
+      b.addEventListener("click", function(){ goToLine(jsLine); });
+      w.appendChild(b);
+    } else { w.textContent="خطأ في JavaScript"; }
+    d.appendChild(w);
+  }
+  if(type==="alert") toast(msg);
+  box.appendChild(d);
+}
+function updateBadge(){ var b=$("badge"); b.textContent=errCount; b.hidden = errCount===0; }
+window.addEventListener("message", function(e){
+  if(e.source!==frame.contentWindow) return;
+  var d=e.data; if(!d || d.wc!==1) return;
+  addLog(d.type, d.msg, d.line);
+});
+function goToLine(n){
+  showTab("js");
+  var lines=ws.js.split("\n"), start=0;
+  for(var i=0;i<n-1 && i<lines.length;i++) start+=lines[i].length+1;
+  var end=start+(lines[n-1]||"").length;
+  code.focus(); code.setSelectionRange(start,end);
+  var lh=parseFloat(getComputedStyle(code).lineHeight)||24; code.scrollTop=Math.max(0,(n-3)*lh);
+}
+
+/* ---------- Menu sheet ---------- */
+function openSheet(html, onClick){
+  var root=$("sheetRoot");
+  root.innerHTML='<div class="sheet-bg" id="sheetBg"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';
+  $("sheetBg").addEventListener("click", function(e){
+    if(e.target.id==="sheetBg" || e.target.hasAttribute("data-close")){ closeSheet(); return; }
+    var btn=e.target.closest("button"); if(btn && onClick) onClick(btn);
+  });
+}
+function closeSheet(){ $("sheetRoot").innerHTML=""; }
+
+$("menuBtn").addEventListener("click", function(){
+  if(tab!=="preview") ws[tab]=code.value;
+  var prev=load(KEY_PREV);
+  openSheet(
+    '<h2>القائمة</h2>'+
+    '<button class="item" type="button" data-act="copy"><strong>نسخ الصفحة كاملة</strong><span>لإرسالها على واتساب أو لصقها في VS Code كملف index.html</span></button>'+
+    '<button class="item" type="button" data-act="image"><strong>إضافة صورة من هاتفك</strong><span>تظهر مكان روابط images/… في كودك</span></button>'+
+    '<button class="item" type="button" data-act="restore"'+(prev?'':' disabled')+'><strong>استرجاع الكود السابق</strong><span>'+(prev?"يرجع كودك كما كان قبل آخر تحميل تمرين":"لا يوجد كود سابق بعد")+'</span></button>'+
+    '<button class="item" type="button" data-act="help"><strong>كيف أستخدم المحرر؟</strong><span>شرح سريع في دقيقة</span></button>'+
+    '<button class="btn" type="button" data-close>إغلاق</button>',
+    function(btn){
+      var a=btn.getAttribute("data-act");
+      if(a==="copy") exportSheet();
+      if(a==="image"){ closeSheet(); openImageSheet(); }
+      if(a==="restore" && prev){ var cur={html:ws.html,css:ws.css,js:ws.js,slot:ws.slot}; ws=prev; save(KEY_PREV,cur); if(tab!=="preview") code.value=ws[tab]; picker.value=ws.slot||"blank"; persist(); closeSheet(); showTab(tab==="preview"?"preview":"html"); render(); toast("تم استرجاع الكود السابق"); }
+      if(a==="help") helpSheet();
+    }
+  );
+});
+
+function exportSheet(){
+  var doc=buildDoc(true);
+  openSheet('<h2>نسخ الصفحة كاملة</h2><p>هذا ملف index.html كامل فيه HTML وCSS وJS معًا.</p><textarea class="export" id="exportText" readonly></textarea><button class="btn primary" type="button" id="doCopy">نسخ</button><button class="btn" type="button" data-close>إغلاق</button>');
+  var t=$("exportText"); t.value=doc;
+  $("doCopy").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    var done=function(){ toast("تم النسخ. الصقه في واتساب أو في ملف جديد"); };
+    var fallback=function(){ t.focus(); t.select(); t.setSelectionRange(0, t.value.length); var ok=false; try{ ok=document.execCommand("copy"); }catch(e){} if(ok) done(); else toast("حدّد النص واضغط نسخ يدويًا"); };
+    try{ navigator.clipboard.writeText(doc).then(done, fallback); }catch(e){ fallback(); }
+  });
+}
+function helpSheet(){
+  openSheet('<h2>كيف أستخدم المحرر؟</h2>'+
+  '<p><strong>التبويبات:</strong> اكتب الهيكل في HTML، والتنسيق في CSS، والتفاعل في JS، ثم افتح «المعاينة» لترى صفحتك.</p>'+
+  '<p><strong>الرموز:</strong> الشريط فوق الكود فيه الرموز الصعبة على لوحة مفاتيح الهاتف مثل <code>&lt; &gt; { } ;</code>.</p>'+
+  '<p><strong>الحفظ:</strong> كل ما تكتبه يُحفظ تلقائيًا على هاتفك، حتى لو أغلقت الصفحة.</p>'+
+  '<p><strong>التمارين:</strong> اختر من القائمة العلوية بداية أي تمرين أو حلّه. كودك السابق يمكن استرجاعه من «القائمة».</p>'+
+  '<p><strong>الأخطاء:</strong> أسفل المعاينة تظهر رسائل الأخطاء ورقم السطر، وهي بديل أدوات المطوّر على الهاتف.</p>'+
+  '<p><strong>نصيحة:</strong> اكتب الكود بالإنجليزية والمحتوى بالعربية، واستخدم الشريط للرموز.</p>'+
+  '<button class="btn" type="button" data-close>فهمت</button>');
+}
+
+/* ---------- Toast ---------- */
+var toastTimer=null;
+function toast(m){ var t=$("toast"); t.textContent=m; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.hidden=true},2600); }
+
+/* ---------- Start ---------- */
+code.value = ws.html;
+showTab("html");
+render();
+})();
+</script>
+
+</body>
+</html>

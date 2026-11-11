@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WebCraft Quiz</title>
+<meta name="description" content="اختبر نفسك في مادة تدريب WebCraft: اختبار اليوم الأول واليوم الثاني بأسلوب ألعاب 8 بت.">
+<meta name="theme-color" content="#1D2B53">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Lalezar&family=Cairo:wght@400;700&display=swap">
+<style>
+/* Layout: arcade cabinet screen. Title screen (pick a world) -> question screen (HUD + question + 4 answers + feedback) -> results screen.
+   PICO-8 palette, one deliberate dark look. */
+:root{
+  --night:#1D2B53; --deep:#151F40; --ink:#000000; --cream:#FFF1E8; --grey:#C2C3C7; --slate:#83769C;
+  --orange:#FFA300; --red:#FF004D; --yellow:#FFEC27; --green:#00E436; --dgreen:#008751; --blue:#29ADFF; --plum:#7E2553;
+  --pixel:"Press Start 2P", "Courier New", monospace;
+  --display:"Lalezar", "Cairo", Tahoma, sans-serif;
+  --body:"Cairo", Tahoma, "Segoe UI", sans-serif;
+  --px:4px; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--night);color:var(--cream);font-family:var(--body);font-size:17px;line-height:1.8;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.18) 0 2px, transparent 2px 4px)}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:var(--px) dashed var(--yellow);outline-offset:var(--px)}
+.latin{font-family:var(--pixel);direction:ltr;unicode-bidi:isolate}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px}
+.pbox{background:var(--cream);color:var(--night);
+  box-shadow:0 calc(-1*var(--px)) 0 0 var(--ink),0 var(--px) 0 0 var(--ink),calc(-1*var(--px)) 0 0 0 var(--ink),var(--px) 0 0 0 var(--ink),0 calc(3*var(--px)) 0 0 rgba(0,0,0,.45)}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.stars i{position:absolute;width:var(--px);height:var(--px);background:var(--cream);opacity:.6}
+main{position:relative;z-index:1}
+@media (prefers-reduced-motion:no-preference){
+  .stars i:nth-child(3n){animation:tw 1.6s steps(2) infinite}
+  .blink{animation:blink 1s steps(2) infinite}
+  .shake{animation:shake .32s steps(4)}
+  .pop{animation:pop .5s steps(5) forwards}
+  .bounce{animation:bounce 1.2s steps(2) infinite}
+}
+@keyframes tw{50%{opacity:.12}}
+@keyframes blink{50%{opacity:0}}
+@keyframes shake{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}
+@keyframes pop{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+@keyframes bounce{50%{transform:translateY(-6px)}}
+
+/* top bar */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.topbar a{font-size:14px;color:var(--grey);text-decoration:none}
+.topbar a:hover{color:var(--yellow)}
+.iconbtn{background:none;border:0;font-family:var(--pixel);font-size:10px;color:var(--grey);padding:8px 0}
+
+/* title screen */
+.title{text-align:center;padding-top:10px}
+.logo{margin:0;font-family:var(--pixel);font-size:clamp(26px,7vw,48px);line-height:1.3;color:var(--orange);direction:ltr;
+  text-shadow:var(--px) var(--px) 0 var(--plum),calc(2*var(--px)) calc(2*var(--px)) 0 var(--ink)}
+.logo span{color:var(--cream)}
+.sub{font-family:var(--display);font-size:clamp(22px,5vw,30px);margin:10px 0 4px;line-height:1.5}
+.press{font-family:var(--pixel);font-size:11px;color:var(--yellow);margin:18px 0 28px}
+.worlds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px;text-align:right}
+@media (max-width:600px){.worlds{grid-template-columns:1fr}}
+.world{border:0;text-align:right;padding:20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.world:hover{background:#FFF8D6}
+.world:active{transform:translateY(var(--px))}
+.world .tag{align-self:flex-start;font-family:var(--pixel);font-size:10px;padding:8px 10px;line-height:1;color:var(--ink)}
+.w1 .tag{background:var(--orange)} .w2 .tag{background:var(--blue)}
+.world h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.35}
+.world p{margin:0;color:#3B3F5C;font-size:15px}
+.world .meta{font-family:var(--pixel);font-size:9px;color:var(--slate);direction:ltr;text-align:right;line-height:2}
+.world .best{font-size:14px;font-weight:700;color:var(--dgreen)}
+.rules{margin-top:30px;text-align:right;color:var(--grey);font-size:15px;display:flex;flex-wrap:wrap;gap:10px 22px;justify-content:center}
+.rules span{display:inline-flex;align-items:center;gap:8px}
+
+/* HUD */
+.hud{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--pixel);font-size:11px;direction:ltr;margin-bottom:12px}
+.hud .score{color:var(--yellow)}
+.hearts{display:flex;gap:6px}
+.heart{width:22px;height:20px;display:block}
+.heart.lost{opacity:.25}
+.bar{display:flex;gap:4px;margin-bottom:22px;direction:rtl}
+.bar i{flex:1;height:12px;background:var(--deep);box-shadow:inset 0 0 0 2px #2C3A6E}
+.bar i.ok{background:var(--green);box-shadow:none}
+.bar i.no{background:var(--red);box-shadow:none}
+.bar i.now{background:var(--yellow);box-shadow:none}
+
+/* question */
+.qcard{padding:22px 22px 20px;position:relative}
+.qnum{font-family:var(--pixel);font-size:10px;color:var(--slate);direction:ltr;text-align:right;margin:0 0 8px}
+.qtext{font-family:var(--display);font-weight:400;font-size:clamp(22px,4.6vw,27px);line-height:1.5;margin:0;text-wrap:balance}
+code{font-family:var(--pixel);font-size:.62em;line-height:1.9;background:var(--night);color:var(--yellow);padding:2px 6px;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.qtext code{font-size:.5em}
+pre.snippet{margin:14px 0 0;background:var(--night);color:var(--cream);padding:14px 16px;font-family:var(--pixel);font-size:11px;line-height:2.1;direction:ltr;text-align:left;overflow-x:auto;white-space:pre}
+.answers{display:flex;flex-direction:column;gap:16px;margin-top:22px}
+.ans{display:flex;align-items:center;gap:14px;text-align:right;border:0;padding:14px 16px;min-height:56px;width:100%}
+.ans .k{flex:0 0 auto;font-family:var(--pixel);font-size:12px;width:34px;height:34px;display:grid;place-items:center;background:var(--night);color:var(--yellow);line-height:1}
+.ans .t{flex:1;min-width:0;font-weight:700;line-height:1.6}
+.ans:not(:disabled):hover{background:#FFF8D6}
+.ans:not(:disabled):active{transform:translateY(var(--px))}
+.ans:disabled{cursor:default}
+.ans.correct{background:var(--green);color:var(--ink)}
+.ans.correct .k{background:var(--ink);color:var(--green)}
+.ans.wrong{background:var(--red);color:var(--cream)}
+.ans.wrong .k{background:var(--ink);color:var(--red)}
+.ans.dim{background:var(--grey);color:#4A4E66}
+.float{position:absolute;top:10px;left:18px;direction:ltr;unicode-bidi:isolate;font-family:var(--pixel);font-size:14px;color:var(--dgreen);pointer-events:none}
+.feedback{margin-top:22px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.feedback .verdict{font-family:var(--pixel);font-size:13px;direction:ltr;text-align:right}
+.feedback.good{background:#D9F7DF}
+.feedback.good .verdict{color:var(--dgreen)}
+.feedback.bad{background:#FFE0E8}
+.feedback.bad .verdict{color:#B0003A}
+.feedback p{margin:0;color:#2A2E4A}
+.next{margin-top:22px;display:flex;justify-content:flex-start}
+.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-size:22px;padding:10px 24px;border:0;background:var(--orange);color:var(--ink);text-decoration:none}
+.btn.alt{background:var(--blue)}
+.btn.ghost{background:var(--cream)}
+.btn:hover{background:var(--yellow)}
+.btn:active{transform:translateY(var(--px))}
+.btn .latin{font-size:11px}
+
+/* results */
+.results{text-align:center}
+.results h2{font-family:var(--pixel);font-size:clamp(18px,5vw,28px);margin:0 0 6px;direction:ltr;line-height:1.5}
+.results .rank{font-family:var(--display);font-size:28px;margin:8px 0 2px}
+.results .msg{color:var(--grey);margin:0 auto 18px;max-width:46ch}
+.bigstars{display:flex;justify-content:center;gap:14px;margin:18px 0 8px}
+.bigstars svg{width:56px;height:56px}
+.bigstars svg.off{opacity:.2}
+.tally{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0 24px;direction:ltr}
+.tally div{font-family:var(--pixel);font-size:10px;padding:10px 12px;background:var(--deep);line-height:1.8;color:var(--grey)}
+.tally b{display:block;font-size:16px;color:var(--yellow)}
+.newbest{font-family:var(--pixel);font-size:11px;color:var(--green);margin:0 0 14px}
+.actions{display:flex;flex-wrap:wrap;gap:20px;justify-content:center}
+.review{margin-top:34px;text-align:right}
+.review h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 14px}
+.review ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px}
+.review li{padding:16px 18px}
+.review .q{font-weight:700;margin:0 0 6px}
+.review .a{margin:0;color:var(--dgreen);font-weight:700}
+.review .why{margin:4px 0 0;color:#3B3F5C;font-size:15px}
+.allright{color:var(--green);font-family:var(--display);font-size:22px;text-align:center;margin-top:24px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="stars" id="stars" aria-hidden="true"></div>
+<main class="wrap">
+  <div class="topbar">
+    <a href="../">◀ موقع WebCraft</a>
+    <button class="iconbtn" id="soundBtn" type="button" aria-pressed="true">SOUND: ON</button>
+  </div>
+
+  <!-- TITLE SCREEN -->
+  <section id="titleScreen" class="title">
+    <h1 class="logo">WEB<span>CRAFT</span><br>QUIZ</h1>
+    <p class="sub">اختبر نفسك وراجع المادة</p>
+    <p class="press"><span class="blink">SELECT WORLD</span></p>
+    <div class="worlds">
+      <button class="world pbox w1" type="button" data-world="1">
+        <span class="tag">WORLD 1 · DAY 1</span>
+        <h2>اختبار اليوم الأول</h2>
+        <p>كيف يعمل الويب، والمحررات، وHTML، وCSS.</p>
+        <span class="meta" id="meta1">12 QUESTIONS · 3 LIVES</span>
+        <span class="best" id="best1"></span>
+      </button>
+      <button class="world pbox w2" type="button" data-world="2">
+        <span class="tag">WORLD 2 · DAY 2</span>
+        <h2>اختبار اليوم الثاني</h2>
+        <p>UI/UX وإمكانية الوصول، والتصميم المتجاوب، وJavaScript، والذكاء الاصطناعي.</p>
+        <span class="meta" id="meta2">14 QUESTIONS · 3 LIVES</span>
+        <span class="best" id="best2"></span>
+      </button>
+    </div>
+    <div class="rules">
+      <span>كل إجابة صحيحة <b class="latin" style="font-size:11px;color:var(--yellow)">+100</b></span>
+      <span>الخطأ يخسرك قلبًا، لكنك تكمل حتى النهاية</span>
+      <span>بعد كل سؤال شرح قصير</span>
+    </div>
+  </section>
+
+  <!-- QUESTION SCREEN -->
+  <section id="quizScreen" hidden>
+    <div class="hud">
+      <span id="hudWorld">WORLD 1</span>
+      <div class="hearts" id="hearts" aria-label="القلوب المتبقية"></div>
+      <span class="score" id="hudScore">SCORE 0000</span>
+    </div>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <article class="qcard pbox" id="qcard">
+      <p class="qnum" id="qnum">Q 01/12</p>
+      <h2 class="qtext" id="qtext"></h2>
+      <pre class="snippet" id="snippet" hidden></pre>
+      <div class="float pop" id="float" hidden>+100</div>
+    </article>
+    <div class="answers" id="answers"></div>
+    <div class="feedback pbox" id="feedback" hidden aria-live="polite">
+      <span class="verdict" id="verdict"></span>
+      <p id="why"></p>
+    </div>
+    <div class="next" id="nextWrap" hidden>
+      <button class="btn pbox" id="nextBtn" type="button">التالي ◀</button>
+    </div>
+  </section>
+
+  <!-- RESULTS SCREEN -->
+  <section id="resultScreen" class="results" hidden>
+    <h2 id="resTitle">STAGE CLEAR!</h2>
+    <div class="bigstars" id="bigstars"></div>
+    <p class="rank" id="rank"></p>
+    <p class="msg" id="msg"></p>
+    <div class="tally">
+      <div>SCORE<b id="tScore">0</b></div>
+      <div>CORRECT<b id="tRight">0/0</b></div>
+      <div>HEARTS<b id="tHearts">0</b></div>
+    </div>
+    <p class="newbest blink" id="newBest" hidden>NEW HIGH SCORE!</p>
+    <div class="actions">
+      <button class="btn pbox" id="retryBtn" type="button">أعد المحاولة</button>
+      <button class="btn alt pbox" id="otherBtn" type="button">الاختبار الآخر</button>
+      <button class="btn ghost pbox" id="homeBtn" type="button">القائمة</button>
+    </div>
+    <div class="review" id="review"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+/* Questions follow the WebCraft slides. Text in `backticks` is shown as code. */
+var WORLDS={
+1:{name:"WORLD 1", title:"اختبار اليوم الأول", qs:[
+ {q:"ما وظيفة نظام DNS عندما تكتب اسم موقع في المتصفح؟", a:["يترجم اسم الموقع إلى عنوان رقمي IP","يخزّن ملفات الموقع ويعرضها","يصمّم شكل الصفحة وألوانها","يسرّع الاتصال بالإنترنت"], why:"DNS مثل دليل الهاتف: يحوّل الاسم المقروء مثل example.com إلى عنوان IP ليعرف المتصفح أي خادم يطلب منه الصفحة."},
+ {q:"أي لغة مسؤولة عن هيكل الصفحة ومحتواها؟", a:["HTML","CSS","JavaScript","DNS"], why:"HTML تبني الهيكل (الجدران والغرف)، وCSS تنسّق الشكل، وJavaScript تضيف التفاعل."},
+ {q:"ما ميزة محررات الأكواد الأونلاين مثل CodePen؟", a:["تعمل من المتصفح بلا تثبيت ويمكن مشاركتها برابط","تعمل دائمًا بدون إنترنت","هي الأفضل للمشاريع الكبيرة جدًا","لا تحتاج HTML ولا CSS"], why:"المحرر الأونلاين ممتاز للتجربة السريعة والمشاركة، لكنه يحتاج اتصالًا بالإنترنت، أما المشاريع الكبيرة فمكانها VS Code."},
+ {q:"ما الاسم الصحيح لملف الصفحة الرئيسية في الموقع؟", a:["`index.html`","`home.html`","`main.html`","`page1.html`"], why:"الخوادم تبحث تلقائيًا عن index.html لتعرضه أولًا عند فتح الموقع أو المجلد."},
+ {q:"أي خاصية تجعل الصفحة تُكتب من اليمين إلى اليسار؟", a:["`dir=\"rtl\"`","`lang=\"ar\"`","`align=\"right\"`","`text=\"rtl\"`"], why:"dir=\"rtl\" تحدد الاتجاه، أما lang=\"ar\" فتحدد اللغة فقط. نستخدم الاثنتين معًا على وسم html."},
+ {q:"أين نكتب كل ما يراه الزائر في الصفحة؟", a:["داخل `<body>`","داخل `<head>`","داخل `<title>`","داخل `<meta>`"], why:"head فيه معلومات لا تظهر مثل الترميز والعنوان وملف التنسيق، أما المحتوى الظاهر فمكانه body."},
+ {q:"لماذا نكتب الخاصية `alt` في وسم الصورة؟", a:["وصف يقرؤه قارئ الشاشة ويظهر إن لم تُحمَّل الصورة","لتكبير حجم الصورة","لتحديد مسار ملف الصورة","لإضافة إطار حول الصورة"], why:"alt تجعل الصورة مفهومة للمكفوفين ولمحركات البحث. مسار الصورة يُكتب في src."},
+ {q:"إلى أين ينقلك هذا الرابط؟", code:'<a href="#contact">تواصل معي</a>', a:["إلى العنصر الذي يحمل `id=\"contact\"` في الصفحة نفسها","إلى ملف اسمه contact.html","إلى موقع خارجي","إلى بريدك الإلكتروني"], why:"الرمز # يعني قسمًا داخل الصفحة نفسها، فيبحث المتصفح عن العنصر الذي يحمل id بالاسم نفسه."},
+ {q:"أي وسم دلالي نستخدمه لقائمة روابط التنقل؟", a:["`<nav>`","`<footer>`","`<div>`","`<aside>`"], why:"nav مخصص للتنقل، وهذا يساعد محركات البحث وقارئ الشاشة. أما div فعنصر عام بلا معنى."},
+ {q:"كيف نختار في CSS كل العناصر التي تحمل `class=\"card\"`؟", a:["`.card`","`#card`","`card`","`*card`"], why:"النقطة للصنف class، والرمز # للمعرّف id. وفي HTML نكتب الاسم بدون نقطة."},
+ {q:"رتّب طبقات نموذج الصندوق Box Model من الداخل إلى الخارج:", a:["content → padding → border → margin","margin → border → padding → content","content → margin → border → padding","padding → content → border → margin"], why:"المحتوى في الوسط، ثم padding (المسافة الداخلية)، ثم border (الحدود)، ثم margin (المسافة الخارجية)."},
+ {q:"أي خاصية نضعها على العنصر الأب لتصطف العناصر داخله بجانب بعضها؟", a:["`display: flex;`","`text-align: row;`","`float: center;`","`position: flex;`"], why:"display: flex على الأب يرتّب الأبناء في صف، ثم نضبطهم بـ justify-content وalign-items وgap."}
+]},
+2:{name:"WORLD 2", title:"اختبار اليوم الثاني", qs:[
+ {q:"ما الفرق بين UI وUX؟", a:["UI ما يراه المستخدم، وUX مدى سهولة وصوله لما يريد","UI للهاتف وUX للحاسوب","UI للألوان فقط وUX للخطوط فقط","لا فرق، هما الاسم نفسه"], why:"UI هي الواجهة: الألوان والأزرار والخطوط. UX هي التجربة: هل فهم الزائر الصفحة ووصل لهدفه بسهولة؟"},
+ {q:"في قاعدة الألوان 60–30–10، لمن نخصص الـ 10%؟", a:["للون مميّز يُستخدم للأزرار والروابط المهمة","لخلفية الصفحة","للعناوين الرئيسية","للنصوص الطويلة"], why:"60% لون محايد للخلفيات، و30% لون أساسي، و10% لون مميّز لما نريد أن يُضغط عليه."},
+ {q:"أي نص أفضل لزر الحجز في موقع مطعم؟", a:["«احجز طاولتك الآن»","«اضغط هنا»","«إرسال»","«تابع»"], why:"نص الزر الجيد يقول للزائر ماذا سيحدث بالضبط بعد الضغط."},
+ {q:"لماذا نستخدم `<button>` بدل `<div>` لعمل زر؟", a:["لأنه يعمل بلوحة المفاتيح ويفهمه قارئ الشاشة تلقائيًا","لأنه ملوّن تلقائيًا","لأن div لا يقبل النصوص","لأن button أسرع في التحميل"], why:"هذا من مبادئ إمكانية الوصول: العنصر الصحيح يجعل الموقع صالحًا للجميع بلا جهد إضافي."},
+ {q:"ما أول خطوة لجعل الصفحة متجاوبة مع الهاتف؟", a:["إضافة وسم viewport داخل head","تصغير كل الخطوط","حذف الصور","استخدام جدول لتنظيم الصفحة"], why:"بدون وسم viewport يعرض الهاتف الصفحة كأنها صفحة حاسوب مصغّرة جدًا."},
+ {q:"متى تُطبَّق الأنماط داخل هذا الكود؟", code:"@media (min-width: 768px) {\n  .cards { flex-direction: row; }\n}", a:["عندما يكون عرض الشاشة 768 بكسل أو أكثر","عندما يكون عرض الشاشة أقل من 768 بكسل","على الهاتف فقط","دائمًا على كل الشاشات"], why:"min-width تعني «من هذا العرض فما فوق»، فتصطف البطاقات في صف على الأجهزة اللوحية والحواسيب."},
+ {q:"ماذا يعني نهج «الهاتف أولًا» Mobile-First؟", a:["نصمّم للشاشة الصغيرة أولًا ثم نضيف تعديلات للشاشات الأكبر","نصنع تطبيقًا للهاتف قبل الموقع","نختبر على الهاتف فقط","نخفي المحتوى على الحاسوب"], why:"نكتب التنسيق الأساسي للهاتف، ثم نستخدم media query بـ min-width للشاشات الأكبر."},
+ {q:"ما الفرق بين `let` و`const` في JavaScript؟", a:["قيمة const لا يمكن تغييرها بعد تحديدها","let للأرقام وconst للنصوص","const أسرع من let","لا فرق بينهما"], why:"let لمتغيّر يمكن تغيير قيمته لاحقًا، وconst لقيمة ثابتة."},
+ {q:"أي سطر يختار الزر الذي يحمل `id=\"themeBtn\"`؟", a:["`document.querySelector(\"#themeBtn\")`","`document.querySelector(\".themeBtn\")`","`document.querySelector(\"themeBtn\")`","`select(themeBtn)`"], why:"querySelector يستخدم محدّدات CSS نفسها: # للمعرّف و. للصنف."},
+ {q:"ماذا يفعل هذا السطر عند كل ضغطة؟", code:'document.body.classList.toggle("dark");', a:["يضيف الصنف dark إن لم يكن موجودًا، ويزيله إن كان موجودًا","يضيف الصنف dark دائمًا","يحذف كل الأصناف من body","يغيّر لون الخط إلى الأسود"], why:"toggle تعني التبديل، لذلك الزر نفسه يشغّل الوضع الليلي ويطفئه."},
+ {q:"ظهرت هذه الرسالة في Console، ما السبب الأرجح؟", code:"Uncaught TypeError: Cannot read properties\nof null (reading 'addEventListener')", a:["querySelector لم يجد العنصر، فراجع الـ id","نسيت إغلاق وسم في CSS","الصورة غير موجودة","الإنترنت مقطوع"], why:"null تعني «لا شيء»: الكود حاول أن يستمع لحدث على عنصر غير موجود، وغالبًا الـ id مكتوب بشكل مختلف."},
+ {q:"لماذا نكتب `e.preventDefault()` داخل حدث submit للنموذج؟", a:["لمنع المتصفح من إرسال النموذج وتحديث الصفحة","لمسح الحقول","لإرسال النموذج بسرعة أكبر","لإظهار رسالة خطأ"], why:"بعد منع الإرسال الافتراضي نستطيع أن نعرض رسالة شكر بأنفسنا دون أن تُعاد تحميل الصفحة."},
+ {q:"ما القاعدة الأهم عند استخدام كود من أداة ذكاء اصطناعي؟", a:["افهم الكود واختبره قبل أن تستخدمه","انسخه كما هو لأنه صحيح دائمًا","الصق كلمات مرورك ليعمل بشكل أفضل","لا تسأله عن الأخطاء"], why:"الذكاء الاصطناعي قد يخطئ بثقة أو يقترح كودًا قديمًا، والكود في موقعك يحمل اسمك."},
+ {q:"أي طلب للذكاء الاصطناعي سيعطيك نتيجة أفضل؟", a:["«أنا مبتدئ، اكتب لي قسم خدمات لمقهى بثلاث بطاقات بـ HTML وCSS، متجاوب ومن اليمين لليسار، واشرح الكود»","«اعمل لي موقع»","«كود حلو»","«صمّم لي شيئًا جميلًا»"], why:"الطلب الجيد فيه سياق ومهمة واضحة وقيود وشكل الإجابة المطلوب."}
+]}
+};
+
+var $=function(id){return document.getElementById(id)};
+var screens={title:$("titleScreen"),quiz:$("quizScreen"),result:$("resultScreen")};
+function show(n){ for(var k in screens) screens[k].hidden = k!==n; window.scrollTo(0,0); }
+
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){ return null; } }
+
+/* stars */
+(function(){ var st=$("stars"), seed=5; function r(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+  for(var i=0;i<50;i++){ var s=document.createElement("i"); s.style.left=(r()*100)+"%"; s.style.top=(r()*100)+"%"; if(i%6===0) s.style.background="#FFEC27"; st.appendChild(s);} })();
+
+/* pixel icons */
+function heartSVG(lost){ var rows=["0110110","1111111","1111111","0111110","0011100","0001000"], r="";
+  rows.forEach(function(row,y){ for(var x=0;x<7;x++) if(row[x]==="1") r+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>'; });
+  return '<svg class="heart'+(lost?' lost':'')+'" viewBox="0 0 7 6" shape-rendering="crispEdges" fill="#FF004D" aria-hidden="true">'+r+'</svg>'; }
+function starSVG(on){ var rows=["0000100000","0000100000","0001110000","1111111111","0111111110","0011111100","0011111100","0111001110","0110000110"], r="";
+  rows.forEach(function(row,y){ for(var x=0;x<10;x++) if(row[x]==="1") r+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>'; });
+  return '<svg class="'+(on?'':'off')+'" viewBox="0 0 10 9" shape-rendering="crispEdges" fill="#FFEC27" aria-hidden="true">'+r+'</svg>'; }
+
+/* 8-bit sounds */
+var soundOn = store("wcq.sound")!=="off", actx=null;
+function beep(notes){
+  if(!soundOn) return;
+  try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  var t=actx.currentTime;
+  notes.forEach(function(n){ var o=actx.createOscillator(), g=actx.createGain(); o.type="square"; o.frequency.value=n[0];
+    g.gain.setValueAtTime(.06,t); g.gain.exponentialRampToValueAtTime(.001,t+n[1]); o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+n[1]); t+=n[1]*0.9; });
+}
+var SFX={ok:[[660,.08],[880,.08],[1320,.14]], no:[[220,.12],[160,.22]], start:[[523,.08],[659,.08],[784,.08],[1047,.18]], win:[[523,.1],[659,.1],[784,.1],[1047,.1],[784,.1],[1047,.3]]};
+function setSoundLabel(){ $("soundBtn").textContent="SOUND: "+(soundOn?"ON":"OFF"); $("soundBtn").setAttribute("aria-pressed",String(soundOn)); }
+$("soundBtn").addEventListener("click",function(){ soundOn=!soundOn; store("wcq.sound",soundOn?"on":"off"); setSoundLabel(); if(soundOn) beep([[880,.08]]); });
+setSoundLabel();
+
+/* helpers */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmt(s){ return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>'); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function pad(n){ return ("0000"+n).slice(-4); }
+
+/* title screen */
+function refreshBest(){ [1,2].forEach(function(w){ var b=store("wcq.best"+w); $("best"+w).textContent = b ? "أفضل نتيجة: "+b+" من "+WORLDS[w].qs.length : ""; $("meta"+w).textContent=WORLDS[w].qs.length+" QUESTIONS · 3 LIVES"; }); }
+refreshBest();
+document.querySelectorAll(".world").forEach(function(b){ b.addEventListener("click",function(){ start(+b.dataset.world); }); });
+
+/* game state */
+var G=null;
+function start(w){
+  G={w:w, i:0, score:0, lives:3, right:0, results:[], wrong:[]};
+  $("hudWorld").textContent=WORLDS[w].name;
+  var bar=$("bar"); bar.innerHTML=""; WORLDS[w].qs.forEach(function(){ bar.appendChild(document.createElement("i")); });
+  beep(SFX.start); show("quiz"); render();
+}
+function renderHUD(){
+  var h=""; for(var k=0;k<3;k++) h+=heartSVG(k>=G.lives); $("hearts").innerHTML=h;
+  $("hudScore").textContent="SCORE "+pad(G.score);
+  var cells=$("bar").children; for(var k=0;k<cells.length;k++){ cells[k].className = G.results[k]===true?"ok":G.results[k]===false?"no":(k===G.i?"now":""); }
+}
+function render(){
+  var Q=WORLDS[G.w].qs[G.i], total=WORLDS[G.w].qs.length;
+  $("qnum").textContent="Q "+String(G.i+1).padStart(2,"0")+"/"+total;
+  $("qtext").innerHTML=fmt(Q.q);
+  var sn=$("snippet"); if(Q.code){ sn.textContent=Q.code; sn.hidden=false; } else sn.hidden=true;
+  $("feedback").hidden=true; $("nextWrap").hidden=true; $("float").hidden=true;
+  var opts=shuffle(Q.a.map(function(t,idx){ return {t:t, ok:idx===0}; }));
+  var box=$("answers"); box.innerHTML="";
+  opts.forEach(function(o,k){
+    var b=document.createElement("button"); b.type="button"; b.className="ans pbox"; b.dataset.ok=o.ok?"1":"0";
+    b.innerHTML='<span class="k">'+(k+1)+'</span><span class="t">'+fmt(o.t)+'</span>';
+    b.addEventListener("click",function(){ answer(b); });
+    box.appendChild(b);
+  });
+  renderHUD();
+}
+function answer(btn){
+  var Q=WORLDS[G.w].qs[G.i], ok=btn.dataset.ok==="1";
+  var all=$("answers").querySelectorAll(".ans");
+  all.forEach(function(b){ b.disabled=true; if(b.dataset.ok==="1") b.classList.add("correct"); else if(b!==btn) b.classList.add("dim"); });
+  var fb=$("feedback");
+  if(ok){
+    G.score+=100; G.right++; G.results[G.i]=true; beep(SFX.ok);
+    var f=$("float"); f.hidden=false; f.classList.remove("pop"); void f.offsetWidth; f.classList.add("pop");
+    fb.className="feedback pbox good"; $("verdict").textContent="CORRECT! +100";
+  } else {
+    btn.classList.add("wrong"); G.lives=Math.max(0,G.lives-1); G.results[G.i]=false; G.wrong.push(Q); beep(SFX.no);
+    var c=$("qcard"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
+    fb.className="feedback pbox bad"; $("verdict").textContent = G.lives>0 ? "OOPS! -1 HEART" : "NO HEARTS LEFT, KEEP GOING!";
+  }
+  $("why").innerHTML=fmt(Q.why);
+  fb.hidden=false;
+  var last = G.i===WORLDS[G.w].qs.length-1;
+  $("nextBtn").textContent = last ? "النتيجة ◀" : "التالي ◀";
+  $("nextWrap").hidden=false;
+  renderHUD();
+  $("nextBtn").focus({preventScroll:true});
+  fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("nextBtn").addEventListener("click",function(){
+  if(G.i < WORLDS[G.w].qs.length-1){ G.i++; render(); window.scrollTo({top:0,behavior:"smooth"}); } else finish();
+});
+document.addEventListener("keydown",function(e){
+  if(screens.quiz.hidden) return;
+  var n=parseInt(e.key,10);
+  if(n>=1 && n<=4){ var b=$("answers").children[n-1]; if(b && !b.disabled) b.click(); }
+});
+
+function finish(){
+  var total=WORLDS[G.w].qs.length, pct=G.right/total;
+  var stars = pct>=0.9?3 : pct>=0.7?2 : pct>=0.5?1 : 0;
+  var s=""; for(var k=0;k<3;k++) s+=starSVG(k<stars); $("bigstars").innerHTML=s;
+  $("resTitle").textContent = stars>=2 ? "STAGE CLEAR!" : stars===1 ? "NICE TRY!" : "GAME OVER?";
+  $("rank").textContent = ["تحتاج مراجعة","بداية جيدة","ممتاز!","أسطورة الويب!"][stars];
+  $("msg").textContent = stars===3 ? "أتقنت مادة هذا اليوم. جرّب الاختبار الآخر." :
+                         stars===2 ? "مستوى قوي. راجع الأسئلة التي أخطأت فيها بالأسفل ثم أعد المحاولة." :
+                         stars===1 ? "أنت على الطريق. اقرأ الشرح بالأسفل ثم العب مرة أخرى." :
+                                     "لا بأس، كل مبرمج بدأ من هنا. راجع الشرح بالأسفل وأعد المحاولة.";
+  $("tScore").textContent=pad(G.score); $("tRight").textContent=G.right+"/"+total; $("tHearts").textContent=G.lives;
+  var prev=parseInt(store("wcq.best"+G.w)||"0",10), isNew=G.right>prev;
+  if(isNew) store("wcq.best"+G.w, String(G.right));
+  $("newBest").hidden=!isNew || G.right===0;
+  var rv=$("review");
+  if(G.wrong.length){
+    rv.innerHTML='<h3>راجع هذه الأسئلة</h3><ol>'+G.wrong.map(function(Q){
+      return '<li class="pbox"><p class="q">'+fmt(Q.q)+'</p>'+(Q.code?'<pre class="snippet">'+esc(Q.code)+'</pre>':'')+'<p class="a">الإجابة: '+fmt(Q.a[0])+'</p><p class="why">'+fmt(Q.why)+'</p></li>';
+    }).join("")+'</ol>';
+  } else rv.innerHTML='<p class="allright">PERFECT! كل إجاباتك صحيحة</p>';
+  $("otherBtn").textContent = G.w===1 ? "اختبار اليوم الثاني" : "اختبار اليوم الأول";
+  beep(stars>=2?SFX.win:SFX.no.slice(0,1));
+  show("result"); refreshBest();
+}
+$("retryBtn").addEventListener("click",function(){ start(G.w); });
+$("otherBtn").addEventListener("click",function(){ start(G.w===1?2:1); });
+$("homeBtn").addEventListener("click",function(){ show("title"); });
+})();
+</script>
+</body>
+</html>

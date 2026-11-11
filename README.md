@@ -10,7 +10,7 @@
 ![JavaScript](https://img.shields.io/badge/LEVEL_4-JAVASCRIPT-FFEC27?style=for-the-badge&labelColor=1D2B53)
 ![Boss](https://img.shields.io/badge/BOSS-FINAL_PROJECT-FF004D?style=for-the-badge&labelColor=1D2B53)
 
-## [▶ افتح الموقع](https://qusaialbahri.github.io/WebCraftTraining/) · [▶ افتح محرر الأكواد](https://qusaialbahri.github.io/WebCraftTraining/editor/) · [⬇ تحميل الملفات](https://qusaialbahri.github.io/WebCraftTraining/WebCraft-files.zip)
+## [▶ افتح الموقع](https://qusaialbahri.github.io/WebCraftTraining/) · [▶ افتح محرر الأكواد](https://qusaialbahri.github.io/WebCraftTraining/editor/) · [⬇ تحميل الملفات](https://qusaialbahri.github.io/WebCraftTraining/WebCraft-files.zip) · [🎮 اختبر نفسك](https://qusaialbahri.github.io/WebCraftTraining/quiz/)
 
 </div>
 
@@ -34,6 +34,12 @@
 | الصور | رفع صورة من معرض الهاتف لتظهر مكان `images/...` |
 | نسخ الصفحة كاملة | لإرسال العمل على واتساب أو نقله إلى VS Code |
 
+## 🎮 اختبر نفسك
+
+اختباران بأسلوب ألعاب 8 بت لمراجعة المادة: **WORLD 1** لليوم الأول (12 سؤالًا) و**WORLD 2** لليوم الثاني (14 سؤالًا)، مع قلوب ونقاط وشرح بعد كل سؤال ومراجعة للأخطاء في النهاية.
+
+**[▶ ابدأ الاختبار](https://qusaialbahri.github.io/WebCraftTraining/quiz/)**
+
 ## 🗺️ خريطة المراحل
 
 <img src="assets/levels.svg" alt="LEVEL 1 → LEVEL 4 → BOSS" width="100%">
@@ -52,6 +58,7 @@
 WebCraftTraining/
 ├── index.html            ← الصفحة الرئيسية
 ├── editor/index.html     ← محرر الأكواد للهاتف
+├── quiz/index.html       ← اختبار اليوم الأول والثاني
 ├── files/                ← مجلد لكل تمرين: index.html و style.css و script.js و images/
 └── WebCraft-files.zip    ← كل ملفات التمارين في ملف واحد
 ```

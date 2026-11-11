@@ -40,6 +40,12 @@
 
 **[▶ ابدأ الاختبار](https://qusaialbahri.github.io/WebCraftTraining/quiz/)**
 
+## 🖨️ قائمة الإنجازات للطباعة
+
+ورقة A5 وجه وظهر: الوجه لليوم الأول والظهر لليوم الثاني. يضع الطالب ✓ بعد كل موضوع يتقنه، وفيها أهم الأكواد ورموز QR للمحرر والاختبار والمراجع.
+
+**[⬇ تحميل قائمة الإنجازات (PDF · A5)](print/WebCraft-Checklist-A5.pdf)**
+
 ## 🗺️ خريطة المراحل
 
 <img src="assets/levels.svg" alt="LEVEL 1 → LEVEL 4 → BOSS" width="100%">
@@ -59,6 +65,7 @@ WebCraftTraining/
 ├── index.html            ← الصفحة الرئيسية
 ├── editor/index.html     ← محرر الأكواد للهاتف
 ├── quiz/index.html       ← اختبار اليوم الأول والثاني
+├── print/                ← قائمة الإنجازات A5 للطباعة
 ├── files/                ← مجلد لكل تمرين: index.html و style.css و script.js و images/
 └── WebCraft-files.zip    ← كل ملفات التمارين في ملف واحد
 ```

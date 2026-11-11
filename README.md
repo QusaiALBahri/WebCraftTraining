@@ -1,18 +1,8 @@
 <div align="center">
 
-```
-██╗    ██╗███████╗██████╗  ██████╗██████╗  █████╗ ███████╗████████╗
-██║    ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝╚══██╔══╝
-██║ █╗ ██║█████╗  ██████╔╝██║     ██████╔╝███████║█████╗     ██║
-██║███╗██║██╔══╝  ██╔══██╗██║     ██╔══██╗██╔══██║██╔══╝     ██║
-╚███╔███╔╝███████╗██████╔╝╚██████╗██║  ██║██║  ██║██║        ██║
- ╚══╝╚══╝ ╚══════╝╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝        ╚═╝
-                      ▶ PRESS START ◀
-```
+<img src="assets/banner.svg" alt="WEBCRAFT – PRESS START" width="100%">
 
 ### أساسيات تصميم وتطوير المواقع الإلكترونية
-
-مؤسسة ولي العهد – مكتب المفرق · 11 و12 تشرين الثاني 2026
 
 ![HTML](https://img.shields.io/badge/LEVEL_1-HTML-FFA300?style=for-the-badge&labelColor=1D2B53)
 ![CSS](https://img.shields.io/badge/LEVEL_2-CSS-29ADFF?style=for-the-badge&labelColor=1D2B53)
@@ -46,6 +36,8 @@
 
 ## 🗺️ خريطة المراحل
 
+<img src="assets/levels.svg" alt="LEVEL 1 → LEVEL 4 → BOSS" width="100%">
+
 | المرحلة | المحتوى | المجلد |
 | --- | --- | --- |
 | LEVEL 1 · HTML | الصفحة التعريفية: header وnav وsection وform | [`01-tamreen1-start`](files/01-tamreen1-start) · [`02-tamreen1-solution`](files/02-tamreen1-solution) |
@@ -72,9 +64,7 @@ WebCraftTraining/
 
 <div align="center">
 
-```
-GAME OVER?  ▶ CONTINUE
-```
+<img src="assets/continue.svg" alt="CONTINUE? 9…0" width="100%">
 
 ابدأ صغيرًا، وابنِ كثيرًا، واستمر في التعلّم.
 
